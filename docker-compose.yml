@@ -1,0 +1,48 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      DATA_ROOT: /data
+      API_PORT: 4000
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production-32-chars-long}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL_CHAT: ${ANTHROPIC_MODEL_CHAT:-claude-sonnet-4-6}
+      ANTHROPIC_MODEL_SUMMARY: ${ANTHROPIC_MODEL_SUMMARY:-claude-haiku-4-5-20251001}
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:4000/healthz').then(r=>process.exit(r.ok?0:1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    environment:
+      API_URL: http://api:4000
+      WEB_PORT: 3000
+      NODE_ENV: production
+    depends_on:
+      api:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - api
+
+volumes:
+  caddy_data:
+  caddy_config:

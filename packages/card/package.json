@@ -1,0 +1,18 @@
+{
+  "name": "@levelup/card",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@levelup/goal-tree": "workspace:*",
+    "@levelup/shared": "workspace:*",
+    "@levelup/tenancy": "workspace:*"
+  }
+}
