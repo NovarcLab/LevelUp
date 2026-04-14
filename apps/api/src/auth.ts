@@ -33,6 +33,7 @@ export interface Auth {
   createOrLoginUser(email: string): Promise<{ user: AuthUser; sessionId: string }>;
   getSession(sessionId: string): AuthUser | null;
   destroySession(sessionId: string): void;
+  renewSessionIfNeeded(sessionId: string, thresholdMs: number): void;
 
   // MCP
   createMcpToken(
@@ -105,6 +106,19 @@ export function createAuth(deps: AuthDeps): Auth {
 
     destroySession(sessionId: string) {
       systemDb.prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
+    },
+
+    renewSessionIfNeeded(sessionId: string, thresholdMs: number) {
+      const row = systemDb
+        .prepare('SELECT expires_at FROM sessions WHERE id = ?')
+        .get(sessionId) as { expires_at: number } | undefined;
+      if (!row) return;
+      const remaining = row.expires_at - Date.now();
+      if (remaining < thresholdMs) {
+        systemDb
+          .prepare('UPDATE sessions SET expires_at = ? WHERE id = ?')
+          .run(Date.now() + SESSION_TTL_MS, sessionId);
+      }
     },
 
     async createMcpToken(userId: string, name: string, scopes: string[]) {
