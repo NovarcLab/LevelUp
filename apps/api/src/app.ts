@@ -9,6 +9,7 @@ import { authRoutes } from './routes/auth.js';
 import { goalsRoutes } from './routes/goals.js';
 import { conversationRoutes } from './routes/conversations.js';
 import { mcpRoutes } from './routes/mcp.js';
+import { settingsRoutes } from './routes/settings.js';
 import type { Config } from './config.js';
 
 export interface App {
@@ -69,6 +70,7 @@ export async function createApp(config: Config): Promise<App> {
   await goalsRoutes(app);
   await conversationRoutes(app, { llm });
   await mcpRoutes(app, { auth });
+  await settingsRoutes(app, { auth });
 
   return {
     app,
