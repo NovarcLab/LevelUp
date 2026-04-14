@@ -7,6 +7,7 @@ import InputBar from '@/components/InputBar';
 import InlineCard from '@/components/InlineCard';
 import Halo from '@/components/Halo';
 import { MOCK_GOALS } from '@/lib/mock';
+import { useDrawer } from '@/lib/drawer';
 
 interface Message {
   id: string;
@@ -22,6 +23,7 @@ export default function Home(): ReactElement {
   const [messages, setMessages] = useState<Message[]>([]);
   const [pending, setPending] = useState(false);
   const streamRef = useRef<HTMLDivElement | null>(null);
+  const { open: openDrawer } = useDrawer();
 
   useEffect(() => {
     void fetch('/api/auth/me', { credentials: 'include' })
@@ -168,7 +170,10 @@ export default function Home(): ReactElement {
     <div className="app">
       <TopBar context="Side Project MVP" />
       <div className="body">
-        <Sidebar goals={MOCK_GOALS} />
+        <Sidebar
+          goals={MOCK_GOALS}
+          onGoalClick={(id) => openDrawer({ type: 'goal', goalId: id })}
+        />
         <main className="main">
           <div className="msg-area" ref={streamRef}>
             <div className="msg-col">

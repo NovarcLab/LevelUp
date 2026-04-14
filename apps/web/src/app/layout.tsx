@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from 'react';
 import Providers from './providers';
 import GlobalShortcuts from '@/components/GlobalShortcuts';
 import CommandBar from '@/components/CommandBar';
+import DrawerHost from '@/components/DrawerHost';
 import ScenesNav from '@/components/ScenesNav';
 import './globals.css';
 
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: ReactNode }): React
           <GlobalShortcuts />
           {children}
           <CommandBar />
+          <DrawerHost />
           <ScenesNav />
         </Providers>
       </body>
