@@ -522,6 +522,85 @@ textarea {
   color: var(--accent);
 }
 
+/* Card type: locate (C2) trail */
+.inline-card-trail {
+  padding: var(--sp-3) 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--fg-1);
+}
+
+.trail-current {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.trail-dim {
+  color: var(--fg-2);
+}
+
+.trail-sep {
+  color: var(--fg-3);
+}
+
+/* Card type: summary (C4) */
+.inline-card-summary-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+}
+
+/* Card type: encourage (C5) */
+.inline-card-encourage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.inline-card-done-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-1) 0;
+}
+
+.inline-card-check {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.inline-card-done-at {
+  font-size: 11px;
+  color: var(--fg-2);
+  margin-left: auto;
+}
+
+/* Card type: celebrate (C6) */
+.inline-card.celebrate {
+  border-color: var(--accent-dim);
+}
+
+.inline-card-celebrate-title {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  color: var(--fg-0);
+  padding: var(--sp-2) 0;
+}
+
+.inline-card-quote {
+  font-size: 13px;
+  color: var(--fg-1);
+  font-style: italic;
+  padding-top: var(--sp-1);
+}
+
+.inline-card-label.accent {
+  color: var(--accent);
+}
+
 /* Input bar */
 .input-row {
   display: flex;

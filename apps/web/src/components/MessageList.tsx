@@ -1,10 +1,11 @@
 import type { ReactElement, ReactNode } from 'react';
 import type { MockMessage } from '@/lib/mock';
+import type { CardPayload } from '@levelup/shared';
 import InlineCard from './InlineCard';
 
 interface MessageListProps {
   messages: MockMessage[];
-  card?: { title: string; percent: number; current: string; next: string } | undefined;
+  card?: CardPayload | undefined;
 }
 
 export default function MessageList({
@@ -21,15 +22,7 @@ export default function MessageList({
       );
     }
     if (m.content === '__CARD__' && card) {
-      nodes.push(
-        <InlineCard
-          key={m.id}
-          title={card.title}
-          percent={card.percent}
-          current={card.current}
-          next={card.next}
-        />,
-      );
+      nodes.push(<InlineCard key={m.id} card={card} />);
       continue;
     }
     if (m.role === 'assistant') {

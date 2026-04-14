@@ -9,11 +9,13 @@ import Halo from '@/components/Halo';
 import { MOCK_GOALS } from '@/lib/mock';
 import { useDrawer } from '@/lib/drawer';
 
+import type { CardPayload } from '@levelup/shared';
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  card?: { title: string; percent: number; current: string; next: string } | null;
+  card?: CardPayload | null;
 }
 
 export default function Home(): ReactElement {
@@ -116,19 +118,11 @@ export default function Home(): ReactElement {
           setMessages((m) =>
             m.map((msg) => (msg.id === assistantId ? { ...msg, content: '' } : msg)),
           );
-        } else if (eventName === 'card' && data.type === 'progress') {
+        } else if (eventName === 'card') {
           setMessages((m) =>
             m.map((msg) =>
               msg.id === assistantId
-                ? {
-                    ...msg,
-                    card: {
-                      title: data.title,
-                      percent: data.percent,
-                      current: data.nextStep ?? '—',
-                      next: '—',
-                    },
-                  }
+                ? { ...msg, card: data as CardPayload }
                 : msg,
             ),
           );
@@ -194,14 +188,7 @@ export default function Home(): ReactElement {
                 return (
                   <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                     {m.content && <div className="msg-ai">{m.content}</div>}
-                    {m.card && (
-                      <InlineCard
-                        title={m.card.title}
-                        percent={m.card.percent}
-                        current={m.card.current}
-                        next={m.card.next}
-                      />
-                    )}
+                    {m.card && <InlineCard card={m.card} />}
                   </div>
                 );
               })}
