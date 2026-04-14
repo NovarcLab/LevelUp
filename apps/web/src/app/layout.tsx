@@ -3,6 +3,7 @@ import Providers from './providers';
 import GlobalShortcuts from '@/components/GlobalShortcuts';
 import CommandBar from '@/components/CommandBar';
 import DrawerHost from '@/components/DrawerHost';
+import NightBanner from '@/components/NightBanner';
 import ScenesNav from '@/components/ScenesNav';
 import './globals.css';
 
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: ReactNode }): React
       <body>
         <Providers>
           <GlobalShortcuts />
+          <NightBanner />
           {children}
           <CommandBar />
           <DrawerHost />

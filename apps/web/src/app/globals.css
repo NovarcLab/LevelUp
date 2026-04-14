@@ -74,6 +74,29 @@
   color-scheme: dark;
 }
 
+/* Light theme */
+[data-theme='light'] {
+  --bg-0: #fafafa;
+  --bg-1: #f4f4f5;
+  --bg-2: #e4e4e7;
+  --bg-glass: rgba(244, 244, 245, 0.76);
+
+  --fg-0: #09090b;
+  --fg-1: #52525b;
+  --fg-2: #71717a;
+  --fg-3: #a1a1aa;
+
+  --line-1: rgba(0, 0, 0, 0.06);
+  --line-2: rgba(0, 0, 0, 0.1);
+
+  --accent: #2563eb;
+  --accent-dim: rgba(37, 99, 235, 0.2);
+  --accent-glow: rgba(37, 99, 235, 0.08);
+  --signal: #ea580c;
+
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
@@ -125,6 +148,45 @@ textarea {
   grid-template-rows: var(--topbar-h) 1fr;
   height: 100vh;
   background: var(--bg-0);
+}
+
+/* Night mode suggestion banner */
+.night-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-6);
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line-1);
+  font-size: 12px;
+  color: var(--fg-1);
+  animation: banner-in 320ms var(--ease-out);
+}
+
+@keyframes banner-in {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+.night-banner-btn {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: var(--accent);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: var(--sp-1) var(--sp-2);
+}
+
+.night-banner-btn.dim {
+  color: var(--fg-2);
 }
 
 .topbar {
