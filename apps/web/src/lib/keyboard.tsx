@@ -56,10 +56,17 @@ export const shortcuts = {
 export function KeyboardProvider({ children }: { children: ReactNode }): ReactElement {
   const registered = useRef(new Map<string, Shortcut>());
   const [commandBarOpen, setCommandBarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('sidebar-collapsed') === '1';
+  });
 
   const toggleSidebar = useCallback(() => {
-    setSidebarCollapsed((c) => !c);
+    setSidebarCollapsed((c) => {
+      const next = !c;
+      localStorage.setItem('sidebar-collapsed', next ? '1' : '0');
+      return next;
+    });
   }, []);
 
   const registerShortcut = useCallback((id: string, shortcut: Shortcut) => {

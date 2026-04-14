@@ -168,7 +168,7 @@ export default function Home(): ReactElement {
     <div className="app">
       <TopBar context="Side Project MVP" />
       <div className="body">
-        <Sidebar collapsed={false} goals={MOCK_GOALS} />
+        <Sidebar goals={MOCK_GOALS} />
         <main className="main">
           <div className="msg-area" ref={streamRef}>
             <div className="msg-col">
