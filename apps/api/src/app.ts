@@ -9,6 +9,7 @@ import { authRoutes } from './routes/auth.js';
 import { goalsRoutes } from './routes/goals.js';
 import { conversationRoutes } from './routes/conversations.js';
 import { mcpRoutes } from './routes/mcp.js';
+import { settingsRoutes } from './routes/settings.js';
 import type { Config } from './config.js';
 
 export interface App {
@@ -40,12 +41,36 @@ export async function createApp(config: Config): Promise<App> {
 
   await installPlugins(app, { auth, registry });
 
-  app.get('/healthz', async () => ({ status: 'ok', ts: Date.now() }));
+  app.get('/healthz', async () => {
+    let dbMs = -1;
+    try {
+      const start = performance.now();
+      registry.getStats();
+      dbMs = Math.round(performance.now() - start);
+    } catch { /* ignore */ }
+
+    let diskFreeMb = -1;
+    try {
+      const { execSync } = await import('node:child_process');
+      const df = execSync(`df -m "${config.dataRoot}" | tail -1`).toString();
+      const parts = df.trim().split(/\s+/);
+      diskFreeMb = parseInt(parts[3] ?? '0', 10);
+    } catch { /* ignore */ }
+
+    return {
+      status: 'ok',
+      ts: Date.now(),
+      dbMs,
+      diskFreeMb,
+      openTenants: registry.getStats().openTenants,
+    };
+  });
 
   await authRoutes(app, { auth });
   await goalsRoutes(app);
   await conversationRoutes(app, { llm });
   await mcpRoutes(app, { auth });
+  await settingsRoutes(app, { auth });
 
   return {
     app,

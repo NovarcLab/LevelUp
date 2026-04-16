@@ -1,15 +1,28 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useRouter } from 'next/navigation';
 import Halo from '@/components/Halo';
 import WordStream from '@/components/WordStream';
 
-type Scene = 1 | 2 | 3 | 4;
+type Scene = 1 | 2 | 3 | 4 | 5;
 
+/**
+ * Onboarding 5-step flow (PRD §F2):
+ * 1. Silence (theater)
+ * 2. Light (halo appears)
+ * 3. First question — "What should I call you?"
+ * 4. AI introduces itself, asks for goal
+ * 5. Goal creation via conversation (streamed from backend)
+ */
 export default function OnboardingPage(): ReactElement {
   const [scene, setScene] = useState<Scene>(1);
   const [name, setName] = useState('');
+  const [goal, setGoal] = useState('');
+  const [creating, setCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const goalRef = useRef<HTMLInputElement | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (scene === 1) {
@@ -23,31 +36,48 @@ export default function OnboardingPage(): ReactElement {
     if (scene === 3) {
       inputRef.current?.focus();
     }
+    if (scene === 5) {
+      goalRef.current?.focus();
+    }
     return undefined;
   }, [scene]);
 
-  const sceneLabel =
-    scene === 1
-      ? '01 / SILENCE'
-      : scene === 2
-        ? '02 / LIGHT'
-        : scene === 3
-          ? '03 / FIRST QUESTION'
-          : '04 / IDENTIFICATION';
+  async function handleGoalSubmit(): Promise<void> {
+    const trimmed = goal.trim();
+    if (!trimmed || creating) return;
+    setCreating(true);
 
-  const sceneFooter =
-    scene === 1
-      ? 'LEVELUP · THE FIRST 60 SECONDS ARE A THEATER'
-      : scene === 2
-        ? 'AMBIENT HALO · ACCENT DOT · 4 × 4 PX'
-        : scene === 3
-          ? 'NO PLACEHOLDER · NO BUTTON · RETURN TO SUBMIT'
-          : 'WORD STREAM · NO CURSOR · NO AVATAR';
+    try {
+      // Create goal via API
+      const res = await fetch('/api/goals', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ title: trimmed }),
+      });
+
+      if (res.ok) {
+        // Create initial conversation with the goal context
+        await fetch('/api/conversations', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({}),
+        });
+        router.push('/');
+      }
+    } catch {
+      setCreating(false);
+    }
+  }
 
   return (
     <div className="scene">
-      <div className="scene-label">{sceneLabel}</div>
-      <div className="scene-footer">{sceneFooter}</div>
+      <div className="scene-label">
+        {scene <= 2 ? `0${scene} / ${scene === 1 ? 'SILENCE' : 'LIGHT'}` :
+         scene === 3 ? '03 / FIRST QUESTION' :
+         scene === 4 ? '04 / IDENTIFICATION' : '05 / ANCHOR'}
+      </div>
 
       {scene === 1 && (
         <div className="center-stack">
@@ -63,10 +93,7 @@ export default function OnboardingPage(): ReactElement {
           <Halo size={1400} y="30%" opacity={0.8} />
           <Halo size={760} y="60%" soft opacity={0.45} />
           <div className="center-stack">
-            <div
-              className="scene-mini-dot"
-              style={{ background: 'var(--accent)' }}
-            />
+            <div className="scene-mini-dot" style={{ background: 'var(--accent)' }} />
           </div>
         </>
       )}
@@ -115,12 +142,41 @@ export default function OnboardingPage(): ReactElement {
                   startDelay={2400}
                 />
               </div>
-              <div className="scene-line accent">
+              <div className="scene-line accent" onClick={() => setScene(5)} style={{ cursor: 'pointer' }}>
                 <WordStream
-                  text="What's the one thing you're trying to move forward right now?"
+                  text="What's the one thing you're trying to move forward right now? ↵"
                   startDelay={4200}
                 />
               </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {scene === 5 && (
+        <>
+          <Halo size={800} y="50%" opacity={0.5} />
+          <div className="center-stack">
+            <div className="scene-question" style={{ fontSize: 14, color: 'var(--fg-1)', marginBottom: 16 }}>
+              {name ? `${name}, w` : 'W'}hat are you working toward?
+            </div>
+            <div className="scene-input-row" style={{ maxWidth: 480 }}>
+              <input
+                ref={goalRef}
+                className="scene-input-text"
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void handleGoalSubmit();
+                }}
+                disabled={creating}
+                style={{ fontSize: 18 }}
+              />
+              {goal.length === 0 && <div className="scene-cursor" />}
+              <div className="scene-input-line" />
+            </div>
+            <div className="scene-hint" style={{ marginTop: 24 }}>
+              {creating ? 'Creating...' : '↵'}
             </div>
           </div>
         </>

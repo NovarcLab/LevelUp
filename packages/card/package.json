@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@levelup/goal-tree": "workspace:*",
+    "@levelup/memory": "workspace:*",
     "@levelup/shared": "workspace:*",
     "@levelup/tenancy": "workspace:*"
   }

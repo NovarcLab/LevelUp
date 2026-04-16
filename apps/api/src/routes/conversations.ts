@@ -9,10 +9,35 @@ import type { CardPayload } from '@levelup/shared';
 import { requireTenant } from '../plugins.js';
 import type { TenantContext } from '@levelup/tenancy';
 
+/* ── Opening resolution (PRD §8 J2) ─────────────── */
+
+export type OpeningType = 'new_user' | 'continue' | 'reopen' | 'reconnect';
+
+export function resolveOpeningMessage(tenant: TenantContext): OpeningType {
+  const row = tenant.db
+    .prepare(
+      'SELECT last_msg_at FROM conversations ORDER BY last_msg_at DESC LIMIT 1',
+    )
+    .get() as { last_msg_at: number } | undefined;
+
+  if (!row) return 'new_user';
+
+  const hoursSince = (Date.now() - row.last_msg_at) / (1000 * 3600);
+  if (hoursSince < 24) return 'continue';
+  if (hoursSince < 24 * 7) return 'reopen';
+  return 'reconnect';
+}
+
 export async function conversationRoutes(
   app: FastifyInstance,
   deps: { llm: LLMClient },
 ): Promise<void> {
+  app.get('/api/conversations/opening', async (req) => {
+    const tenant = requireTenant(req);
+    const type = resolveOpeningMessage(tenant);
+    return { opening: type };
+  });
+
   app.post('/api/conversations', async (req) => {
     const tenant = requireTenant(req);
     const body = z

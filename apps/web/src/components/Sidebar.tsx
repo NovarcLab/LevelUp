@@ -1,20 +1,31 @@
-import type { ReactElement } from 'react';
+'use client';
+
+import { type ReactElement } from 'react';
 import type { MockGoal } from '@/lib/mock';
+import { useKeyboard } from '@/lib/keyboard';
 
 interface SidebarProps {
-  collapsed?: boolean;
   goals?: MockGoal[];
+  onGoalClick?: (goalId: string) => void;
 }
 
 export default function Sidebar({
-  collapsed = false,
   goals = [],
+  onGoalClick,
 }: SidebarProps): ReactElement {
-  if (collapsed) {
+  const { sidebarCollapsed } = useKeyboard();
+
+  if (sidebarCollapsed) {
     return (
       <aside className="sidebar collapsed">
         {goals.map((g) => (
-          <div key={g.id} className={`dot ${g.status}`} />
+          <div
+            key={g.id}
+            className={`dot ${g.status}`}
+            title={g.title}
+            onClick={() => onGoalClick?.(g.id)}
+            style={{ cursor: 'pointer' }}
+          />
         ))}
         <div style={{ height: 20 }} />
         <span className="sb-add" aria-hidden>
@@ -28,7 +39,12 @@ export default function Sidebar({
     <aside className="sidebar expanded">
       <div className="sb-label">GOALS</div>
       {goals.map((g) => (
-        <div key={g.id} className={`goal-card ${g.current ? 'current' : ''}`}>
+        <div
+          key={g.id}
+          className={`goal-card ${g.current ? 'current' : ''}`}
+          onClick={() => onGoalClick?.(g.id)}
+          style={{ cursor: 'pointer' }}
+        >
           <div className="goal-card-top">
             <div className={`dot ${g.status}`} />
             <span className="goal-card-title">{g.title}</span>

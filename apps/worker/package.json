@@ -1,0 +1,27 @@
+{
+  "name": "@levelup/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "dev": "tsx watch src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@levelup/llm": "workspace:*",
+    "@levelup/memory": "workspace:*",
+    "@levelup/shared": "workspace:*",
+    "@levelup/tenancy": "workspace:*",
+    "nanoid": "^5.0.7",
+    "node-cron": "^3.0.3",
+    "pino": "^9.5.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.19.2"
+  }
+}

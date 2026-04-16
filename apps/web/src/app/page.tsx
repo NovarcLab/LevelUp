@@ -6,13 +6,18 @@ import Sidebar from '@/components/Sidebar';
 import InputBar from '@/components/InputBar';
 import InlineCard from '@/components/InlineCard';
 import Halo from '@/components/Halo';
+import WordStream from '@/components/WordStream';
 import { MOCK_GOALS } from '@/lib/mock';
+import { useDrawer } from '@/lib/drawer';
+
+import type { CardPayload } from '@levelup/shared';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  card?: { title: string; percent: number; current: string; next: string } | null;
+  card?: CardPayload | null;
+  streaming?: boolean;
 }
 
 export default function Home(): ReactElement {
@@ -22,6 +27,7 @@ export default function Home(): ReactElement {
   const [messages, setMessages] = useState<Message[]>([]);
   const [pending, setPending] = useState(false);
   const streamRef = useRef<HTMLDivElement | null>(null);
+  const { open: openDrawer } = useDrawer();
 
   useEffect(() => {
     void fetch('/api/auth/me', { credentials: 'include' })
@@ -71,7 +77,7 @@ export default function Home(): ReactElement {
     setMessages((m) => [
       ...m,
       { id: userMsgId, role: 'user', content: trimmed },
-      { id: assistantId, role: 'assistant', content: '' },
+      { id: assistantId, role: 'assistant', content: '', streaming: true },
     ]);
 
     const res = await fetch(`/api/conversations/${id}/messages`, {
@@ -114,23 +120,20 @@ export default function Home(): ReactElement {
           setMessages((m) =>
             m.map((msg) => (msg.id === assistantId ? { ...msg, content: '' } : msg)),
           );
-        } else if (eventName === 'card' && data.type === 'progress') {
+        } else if (eventName === 'card') {
           setMessages((m) =>
             m.map((msg) =>
               msg.id === assistantId
-                ? {
-                    ...msg,
-                    card: {
-                      title: data.title,
-                      percent: data.percent,
-                      current: data.nextStep ?? '—',
-                      next: '—',
-                    },
-                  }
+                ? { ...msg, card: data as CardPayload }
                 : msg,
             ),
           );
         } else if (eventName === 'done' || eventName === 'error') {
+          setMessages((m) =>
+            m.map((msg) =>
+              msg.id === assistantId ? { ...msg, streaming: false } : msg,
+            ),
+          );
           setPending(false);
         }
       }
@@ -168,7 +171,10 @@ export default function Home(): ReactElement {
     <div className="app">
       <TopBar context="Side Project MVP" />
       <div className="body">
-        <Sidebar collapsed={false} goals={MOCK_GOALS} />
+        <Sidebar
+          goals={MOCK_GOALS}
+          onGoalClick={(id) => openDrawer({ type: 'goal', goalId: id })}
+        />
         <main className="main">
           <div className="msg-area" ref={streamRef}>
             <div className="msg-col">
@@ -188,15 +194,12 @@ export default function Home(): ReactElement {
                 }
                 return (
                   <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                    {m.content && <div className="msg-ai">{m.content}</div>}
-                    {m.card && (
-                      <InlineCard
-                        title={m.card.title}
-                        percent={m.card.percent}
-                        current={m.card.current}
-                        next={m.card.next}
-                      />
+                    {m.content && (
+                      <div className="msg-ai">
+                        {m.streaming ? <WordStream text={m.content} /> : m.content}
+                      </div>
                     )}
+                    {m.card && <InlineCard card={m.card} />}
                   </div>
                 );
               })}

@@ -1,10 +1,36 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { nanoid } from 'nanoid';
 import { goalTree } from '@levelup/goal-tree';
 import { memoryStore } from '@levelup/memory';
 import { ForbiddenError, UnauthorizedError } from '@levelup/shared';
 import { requireTenant, requireUser } from '../plugins.js';
 import type { Auth } from '../auth.js';
+
+/* ── Rate limiter (in-process token bucket) ──────── */
+
+interface Bucket {
+  tokens: number;
+  lastRefill: number;
+}
+
+const buckets = new Map<string, Bucket>();
+
+function checkRate(tokenId: string, isWrite: boolean): boolean {
+  const maxPerMin = isWrite ? 20 : 60;
+  const now = Date.now();
+  let bucket = buckets.get(tokenId);
+  if (!bucket) {
+    bucket = { tokens: maxPerMin, lastRefill: now };
+    buckets.set(tokenId, bucket);
+  }
+  const elapsed = (now - bucket.lastRefill) / 60000;
+  bucket.tokens = Math.min(maxPerMin, bucket.tokens + elapsed * maxPerMin);
+  bucket.lastRefill = now;
+  if (bucket.tokens < 1) return false;
+  bucket.tokens -= 1;
+  return true;
+}
 
 /**
  * The MCP server. Implemented as a single JSON-RPC-ish endpoint for
@@ -60,6 +86,11 @@ export async function mcpRoutes(
     const ensure = (scope: string): void => {
       if (!scopes.has(scope)) throw new ForbiddenError(`scope required: ${scope}`);
     };
+
+    const isWrite = ['mark_action_done', 'log_progress'].includes(body.method);
+    if (req.mcpTokenId && !checkRate(req.mcpTokenId, isWrite)) {
+      throw new ForbiddenError('rate limit exceeded');
+    }
 
     const auditLine = {
       ts: Date.now(),
@@ -123,6 +154,56 @@ export async function mcpRoutes(
           return { digests };
         }
 
+        case 'log_progress': {
+          ensure('progress:write');
+          const { actionId, note } = z
+            .object({ actionId: z.string(), note: z.string().optional() })
+            .parse(body.params ?? {});
+          // Create a synthetic conversation + digest
+          const convId = nanoid(12);
+          const now = Date.now();
+          tenant.db
+            .prepare(
+              `INSERT INTO conversations (id,context_goal_id,started_at,last_msg_at,created_at,source)
+               VALUES (?,NULL,?,?,?,'mcp')`,
+            )
+            .run(convId, now, now, now);
+          const content = note ?? `Progress logged via MCP for action ${actionId}`;
+          tenant.db
+            .prepare(
+              `INSERT INTO messages (id,conversation_id,role,content,created_at)
+               VALUES (?,?,?,?,?)`,
+            )
+            .run(nanoid(16), convId, 'user', content, now);
+          await goalTree.markActionDone(tenant, actionId);
+          return { ok: true, conversationId: convId };
+        }
+
+        // MCP Resources
+        case 'resources/list': {
+          return {
+            resources: [
+              { uri: 'goals://active', name: 'Active goals', mimeType: 'application/json' },
+              { uri: 'memory://profile', name: 'User profile', mimeType: 'application/json' },
+            ],
+          };
+        }
+
+        case 'resources/read': {
+          const { uri } = z.object({ uri: z.string() }).parse(body.params ?? {});
+          if (uri === 'goals://active') {
+            ensure('goals:read');
+            const goals = await goalTree.activeSnapshot(tenant);
+            return { contents: [{ uri, text: JSON.stringify(goals) }] };
+          }
+          if (uri === 'memory://profile') {
+            ensure('memory:read');
+            const profile = await memoryStore.readProfile(tenant);
+            return { contents: [{ uri, text: JSON.stringify(profile) }] };
+          }
+          throw new Error(`unknown resource: ${uri}`);
+        }
+
         default:
           auditLine.ok = false;
           throw new Error(`unknown method: ${body.method}`);
@@ -163,6 +244,11 @@ function toolCatalog(): Array<{ name: string; scopes: string[]; description: str
       name: 'get_recent_digests',
       scopes: ['memory:read'],
       description: 'Return recent session digests (summaries).',
+    },
+    {
+      name: 'log_progress',
+      scopes: ['progress:write'],
+      description: 'Log progress on an action and mark it done. Creates a synthetic conversation.',
     },
   ];
 }

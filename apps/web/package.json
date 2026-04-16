@@ -12,6 +12,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@levelup/motion": "workspace:*",
+    "@levelup/shared": "workspace:*",
+    "cmdk": "^1.1.1",
     "next": "^15.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

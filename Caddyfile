@@ -1,10 +1,11 @@
-:80 {
+{$DOMAIN:localhost} {
   encode zstd gzip
 
   @api path /api/* /mcp /healthz
   handle @api {
     reverse_proxy api:4000 {
       flush_interval -1
+      header_up X-Accel-Buffering no
     }
   }
 

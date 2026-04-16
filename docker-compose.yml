@@ -18,6 +18,21 @@ services:
       timeout: 3s
       retries: 5
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    command: ["node", "--import", "tsx", "apps/worker/src/main.ts"]
+    environment:
+      DATA_ROOT: /data
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL_SUMMARY: ${ANTHROPIC_MODEL_SUMMARY:-claude-haiku-4-5-20251001}
+    volumes:
+      - ./data:/data
+    depends_on:
+      api:
+        condition: service_healthy
+
   web:
     build:
       context: .

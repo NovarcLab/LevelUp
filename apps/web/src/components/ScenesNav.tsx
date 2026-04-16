@@ -18,6 +18,9 @@ const SCENES: Array<{ href: string; label: string }> = [
 ];
 
 export default function ScenesNav(): ReactElement {
+  // Hide in production — dev-only navigation
+  if (process.env.NODE_ENV === 'production') return <></>;
+
   const pathname = usePathname();
   return (
     <nav className="scenes-nav">

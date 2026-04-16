@@ -74,4 +74,11 @@ function runSystemMigrations(db: Database.Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_mcp_user ON mcp_tokens(user_id);
   `);
+
+  // Record migration version if not already present
+  const existing = db.prepare('SELECT version FROM _system_migrations WHERE version = 1').get();
+  if (!existing) {
+    db.prepare('INSERT INTO _system_migrations (version, name, applied_at) VALUES (?, ?, ?)')
+      .run(1, 'initial_schema', Date.now());
+  }
 }
